@@ -1,9 +1,10 @@
 spring:
-  application:
-    name: common-config
+  # application:
+  #   name: common-config
   datasource:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: true
+
