@@ -23,10 +23,11 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://discovery-server:8761/
+      defaultZone: http://discovery-server:8761/eureka/
 
 logging:
   level:
     org.springframework.security: DEBUG
     org.springframework.security.oauth2: DEBUG
+
 
