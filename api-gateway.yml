@@ -29,6 +29,16 @@ spring:
         jwt:
           issuer-uri: http://auth-server:9000
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    gateway:
+      enabled: true
+
+
 eureka:
   client:
     service-url:
