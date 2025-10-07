@@ -1,70 +1,69 @@
-server:
-  port: 8080
-
-spring:
-  application:
-    name: api-gateway
-  cloud:
-    config:
-      fail-fast: true
-    gateway:
-      default-filters:
-        - TokenRelay
-      routes:
-        - id: book-service
-          uri: lb://book-service
-          predicates:
-            - Path=/api/books/**
-        - id: user-service
-          uri: lb://user-service
-          predicates:
-            - Path=/api/users/**
-        - id: loan-service
-          uri: lb://loan-service
-          predicates:
-            - Path=/api/loans/**
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://auth-server:9000
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://discovery-server:8761/eureka/
-server:
-  port: 8080
-
-spring:
-  application:
-    name: api-gateway
-  cloud:
-    config:
-      fail-fast: true
-    gateway:
-      default-filters:
-        - TokenRelay
-      routes:
-        - id: book-service
-          uri: lb://book-service
-          predicates:
-            - Path=/api/books/**
-        - id: user-service
-          uri: lb://user-service
-          predicates:
-            - Path=/api/users/**
-        - id: loan-service
-          uri: lb://loan-service
-          predicates:
-            - Path=/api/loans/**
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://auth-server:9000
-
-eureka:
-  client:
-    service-url:
-      defaultZone: http://discovery-server:8761/eureka/
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-gateway-config
+  namespace: library
+data:
+  application.yml: |
+    server:
+      port: 8080
+    
+    spring:
+      application:
+        name: api-gateway
+      
+      config:
+        import: optional:configserver:http://config-server:8888
+      
+      cloud:
+        gateway:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+          
+          routes:
+            - id: book-service
+              uri: lb://book-service
+              predicates:
+                - Path=/api/books/**
+              filters:
+                - StripPrefix=1
+                - TokenRelay
+            
+            - id: user-service
+              uri: lb://user-service
+              predicates:
+                - Path=/api/users/**
+              filters:
+                - StripPrefix=1
+                - TokenRelay
+            
+            - id: loan-service
+              uri: lb://loan-service
+              predicates:
+                - Path=/api/loans/**
+              filters:
+                - StripPrefix=1
+                - TokenRelay
+      
+      security:
+        oauth2:
+          resourceserver:
+            jwt:
+              issuer-uri: http://auth-server:9000
+              jwk-set-uri: http://auth-server:9000/oauth2/jwks
+    
+    eureka:
+      client:
+        service-url:
+          defaultZone: http://discovery-server:8761/eureka/
+    
+    management:
+      endpoint:
+        gateway:
+          enabled: true
+      endpoints:
+        web:
+          exposure:
+            include: health,info,gateway
