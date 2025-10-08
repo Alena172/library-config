@@ -4,48 +4,59 @@ server:
 spring:
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
-      routes:
-        - id: auth-server
-          uri: lb://auth-server
-          predicates:
-            - Path=/oauth2/**, /login/**
-          
-        - id: book-service
-          uri: lb://book-service
-          predicates:
-            - Path=/api/books/**
-          filters:
-            - name: RequestHeader
-              args:
-                name: Authorization
-                value: "Bearer {jwt}"
-            - RewritePath=/api/books/(?<segment>.*), /api/books/$\{segment}
-          
-        - id: user-service
-          uri: lb://user-service
-          predicates:
-            - Path=/api/users/**
-          filters:
-            - name: RequestHeader
-              args:
-                name: Authorization
-                value: "Bearer {jwt}"
-            - RewritePath=/api/users/(?<segment>.*), /api/users/$\{segment}
-          
-        - id: loan-service
-          uri: lb://loan-service
-          predicates:
-            - Path=/api/loans/**
-          filters:
-            - name: RequestHeader
-              args:
-                name: Authorization
-                value: "Bearer {jwt}"
-            - RewritePath=/api/loans/(?<segment>.*), /api/loans/$\{segment}
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+          routes:
+            - id: auth-server
+              uri: lb://auth-server
+              predicates:
+                - Path=/oauth2/**, /login/**
+
+            - id: book-service
+              uri: lb://book-service
+              predicates:
+                - Path=/api/books/**
+              filters:
+                - name: AddRequestHeader
+                  args:
+                    name: Authorization
+                    value: "Bearer {jwt}"
+                - name: RewritePath
+                  args:
+                    regexp: "/api/books/(?<segment>.*)"
+                    replacement: "/api/books/${segment}"
+
+            - id: user-service
+              uri: lb://user-service
+              predicates:
+                - Path=/api/users/**
+              filters:
+                - name: AddRequestHeader
+                  args:
+                    name: Authorization
+                    value: "Bearer {jwt}"
+                - name: RewritePath
+                  args:
+                    regexp: "/api/users/(?<segment>.*)"
+                    replacement: "/api/users/${segment}"
+
+            - id: loan-service
+              uri: lb://loan-service
+              predicates:
+                - Path=/api/loans/**
+              filters:
+                - name: AddRequestHeader
+                  args:
+                    name: Authorization
+                    value: "Bearer {jwt}"
+                - name: RewritePath
+                  args:
+                    regexp: "/api/loans/(?<segment>.*)"
+                    replacement: "/api/loans/${segment}"
 
 eureka:
   client:
@@ -64,3 +75,4 @@ management:
 logging:
   level:
     org.springframework.cloud.gateway: INFO
+
