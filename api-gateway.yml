@@ -1,186 +1,66 @@
-# server:
-#   port: 8080
-
-# spring:
-#   application:
-#     name: api-gateway
-#   cloud:
-#     config:
-#       fail-fast: true
-#     gateway:
-#       default-filters:
-#         - TokenRelay
-#       routes:
-#         - id: book-service
-#           uri: lb://book-service
-#           predicates:
-#             - Path=/api/books/**
-#         - id: user-service
-#           uri: lb://user-service
-#           predicates:
-#             - Path=/api/users/**
-#         - id: loan-service
-#           uri: lb://loan-service
-#           predicates:
-#             - Path=/api/loans/**
-#   security:
-#     oauth2:
-#       resourceserver:
-#         jwt:
-#           issuer-uri: http://auth-server:9000
-
-# management:
-#   endpoints:
-#     web:
-#       exposure:
-#         include: "*"
-#   endpoint:
-#     gateway:
-#       enabled: true
-
-
-# eureka:
-#   client:
-#     service-url:
-#       defaultZone: http://discovery-server:8761/
-
-# server:
-#   port: 8080
-
-# spring:
-#   main:
-#     web-application-type: reactive
-#   security:
-#     oauth2:
-#       resourceserver:
-#         jwt:
-#           issuer-uri: http://auth-server:9000
-#   cloud:
-#     gateway:
-#       discovery:
-#         locator:
-#           enabled: true
-#           lower-case-service-id: true
-#       routes:
-#         - id: book-service
-#           uri: lb://book-service
-#           predicates:
-#             - Path=/api/books/**
-#           filters:
-#             - StripPrefix=1
-#         - id: user-service
-#           uri: lb://user-service
-#           predicates:
-#             - Path=/api/users/**
-#           filters:
-#             - StripPrefix=1
-#         - id: loan-service
-#           uri: lb://loan-service
-#           predicates:
-#             - Path=/api/loans/**
-#           filters:
-#             - StripPrefix=1
-#         - id: auth-server
-#           uri: lb://auth-server
-#           predicates:
-#             - Path=/oauth2/**
-#           filters:
-#             - StripPrefix=0
-
-#   security:
-#     oauth2:
-#       resourceserver:
-#         jwt:
-#           issuer-uri: http://auth-server:9000
-#           jwk-set-uri: http://auth-server:9000/oauth2/jwks
-
-# management:
-#   endpoints:
-#     web:
-#       exposure:
-#         include: "*"
-#   endpoint:
-#     gateway:
-#       enabled: true
-
-# eureka:
-#   client:
-#     service-url:
-#       defaultZone: http://discovery-server:8761/eureka/
-
-# logging:
-#   level:
-#     org.springframework.cloud.gateway: DEBUG
-#     org.springframework.security: DEBUG
 server:
   port: 8080
 
 spring:
-  application:
-    name: api-gateway
-
-  main:
-    web-application-type: reactive
-
   cloud:
     gateway:
       discovery:
         locator:
           enabled: true
           lower-case-service-id: true
-      globalcors:
-        corsConfigurations:
-          '[/**]':
-            allowedOrigins: "*"
-            allowedMethods: "*"
-            allowedHeaders: "*"
       routes:
+        - id: auth-server
+          uri: lb://auth-server
+          predicates:
+            - Path=/oauth2/**, /login/**
+          
         - id: book-service
           uri: lb://book-service
           predicates:
             - Path=/api/books/**
           filters:
-            - StripPrefix=1
+            - name: RequestHeader
+              args:
+                name: Authorization
+                value: "Bearer {jwt}"
+            - RewritePath=/api/books/(?<segment>.*), /api/books/$\{segment}
+          
         - id: user-service
           uri: lb://user-service
           predicates:
             - Path=/api/users/**
           filters:
-            - StripPrefix=1
+            - name: RequestHeader
+              args:
+                name: Authorization
+                value: "Bearer {jwt}"
+            - RewritePath=/api/users/(?<segment>.*), /api/users/$\{segment}
+          
         - id: loan-service
           uri: lb://loan-service
           predicates:
             - Path=/api/loans/**
           filters:
-            - StripPrefix=1
-        - id: auth-server
-          uri: lb://auth-server
-          predicates:
-            - Path=/oauth2/**
-          filters:
-            - StripPrefix=0
-
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: http://auth-server:9000
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
-    gateway:
-      enabled: true
+            - name: RequestHeader
+              args:
+                name: Authorization
+                value: "Bearer {jwt}"
+            - RewritePath=/api/loans/(?<segment>.*), /api/loans/$\{segment}
 
 eureka:
   client:
     service-url:
       defaultZone: http://discovery-server:8761/eureka/
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway
+  endpoint:
+    health:
+      show-details: always
+
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.security: DEBUG
+    org.springframework.cloud.gateway: INFO
